@@ -102,7 +102,7 @@ class PostgreSQLSchemaManager extends AbstractSchemaManager
      *
      * @deprecated Use {@see listSchemaNames()} instead.
      *
-     * @return string[]
+     * @return string[]tColumn
      *
      * @throws Exception
      */
@@ -376,18 +376,9 @@ SQL,
             $tableColumn['length'] = $length;
         }
 
+        $autoincrement = $tableColumn['attidentity'] === 'd';
+
         $matches = [];
-
-        $autoincrement = false;
-
-        if (
-            $tableColumn['default'] !== null
-            && preg_match("/^nextval\('(.*)'(::.*)?\)$/", $tableColumn['default'], $matches) === 1
-        ) {
-            $tableColumn['sequence'] = $matches[1];
-            $tableColumn['default']  = null;
-            $autoincrement           = true;
-        }
 
         if ($tableColumn['default'] !== null) {
             if (preg_match("/^['(](.*)[')]::/", $tableColumn['default'], $matches) === 1) {
@@ -626,6 +617,7 @@ SQL;
             (SELECT format_type(t2.typbasetype, t2.typtypmod) FROM
               pg_catalog.pg_type t2 WHERE t2.typtype = 'd' AND t2.oid = a.atttypid) AS domain_complete_type,
             a.attnotnull AS isnotnull,
+            a.attidentity,
             (SELECT 't'
              FROM pg_index
              WHERE c.oid = pg_index.indrelid
